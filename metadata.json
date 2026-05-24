@@ -1,0 +1,6 @@
+{
+  "name": "Pojok Kepegawaian",
+  "description": "Aplikasi dashboard kepegawaian untuk monitoring ijin keluar kantor, arsip dokumen, data diklat, dan rekapitulasi jam pelajaran (JP) pegawai.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
