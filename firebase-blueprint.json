@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "ArchiveItem": {
+      "title": "ArchiveItem",
+      "description": "Tautan data dan arsip kepegawaian yang dibagikan kepada publik",
+      "type": "object",
+      "properties": {
+        "nama": {
+          "type": "string",
+          "description": "Nama dokumen atau arsip"
+        },
+        "url": {
+          "type": "string",
+          "description": "Tautan / URL dokumen"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu pembuatan dokumen"
+        }
+      },
+      "required": ["nama", "url", "createdAt"]
+    },
+    "DiklatItem": {
+      "title": "DiklatItem",
+      "description": "Data Diklat Pegawai",
+      "type": "object",
+      "properties": {
+        "nama": {
+          "type": "string",
+          "description": "Nama Pegawai"
+        },
+        "nip": {
+          "type": "string",
+          "description": "NIP Pegawai"
+        },
+        "diklat": {
+          "type": "string",
+          "description": "Nama Diklat atau Pelatihan"
+        },
+        "penyelenggara": {
+          "type": "string",
+          "description": "Penyelenggara Pelatihan"
+        },
+        "tanggal": {
+          "type": "string",
+          "description": "Tanggal Mulai Pelatihan"
+        },
+        "jp": {
+          "type": "number",
+          "description": "Jumlah Jam Pelajaran (JP)"
+        },
+        "sertifikat": {
+          "type": "string",
+          "description": "Nomor Sertifikat"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status kelulusan"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Waktu penambahan data"
+        }
+      },
+      "required": ["nama", "nip", "diklat", "penyelenggara", "tanggal", "jp", "sertifikat", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/archives/{archiveId}": {
+      "schema": "ArchiveItem",
+      "description": "Koleksi data dan arsip kepegawaian"
+    },
+    "/diklats/{diklatId}": {
+      "schema": "DiklatItem",
+      "description": "Koleksi data diklat kepegawaian"
+    }
+  }
+}

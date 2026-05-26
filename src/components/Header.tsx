@@ -29,8 +29,13 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
         {/* Dynamic HR Corporate Styling */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-200">
-              <GraduationCap size={24} />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white border border-slate-200/80 flex items-center justify-center shadow-sm">
+              <img 
+                src="https://assets.siakadcloud.com/uploads/atimakassar/logoaplikasi/1183.jpg" 
+                alt="Logo Ati Makassar" 
+                className="w-10 h-10 object-contain"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">

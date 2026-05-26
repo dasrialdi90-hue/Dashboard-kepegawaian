@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Helper: Archive item validation
+    function isValidArchive(data) {
+      return data.keys().hasAll(['nama', 'url', 'createdAt'])
+        && data.keys().size() == 3
+        && data.nama is string && data.nama.size() > 0 && data.nama.size() <= 200
+        && data.url is string && data.url.size() > 0 && data.url.size() <= 2000
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // Helper: Diklat item validation
+    function isValidDiklat(data) {
+      return data.keys().hasAll(['nama', 'nip', 'diklat', 'penyelenggara', 'tanggal', 'jp', 'sertifikat', 'status', 'createdAt'])
+        && data.keys().size() == 9
+        && data.nama is string && data.nama.size() > 0 && data.nama.size() <= 200
+        && data.nip is string && data.nip.size() <= 50
+        && data.diklat is string && data.diklat.size() > 0 && data.diklat.size() <= 300
+        && data.penyelenggara is string && data.penyelenggara.size() <= 300
+        && data.tanggal is string && data.tanggal.size() <= 50
+        && data.jp is number && data.jp >= 0
+        && data.sertifikat is string && data.sertifikat.size() <= 200
+        && data.status is string && data.status.size() <= 50
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    // Archives collection
+    match /archives/{archiveId} {
+      allow read: if true;
+      allow create: if isValidId(archiveId) && isValidArchive(incoming());
+      allow update: if isValidId(archiveId) && isValidArchive(incoming());
+      allow delete: if isValidId(archiveId);
+    }
+
+    // Diklats collection
+    match /diklats/{diklatId} {
+      allow read: if true;
+      allow create: if isValidId(diklatId) && isValidDiklat(incoming());
+      allow update: if isValidId(diklatId) && isValidDiklat(incoming());
+      allow delete: if isValidId(diklatId);
+    }
+  }
+}

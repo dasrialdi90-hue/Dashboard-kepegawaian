@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   FolderOpen
 } from 'lucide-react';
+import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 
 const CORRECT_PIN = '2026';
 
@@ -57,27 +59,45 @@ export default function ArchiveTab() {
   const [editPin, setEditPin] = useState('');
   const [editError, setEditError] = useState('');
 
-  // Load from LocalStorage on mount
+  // Load from Firestore on mount
   useEffect(() => {
-    const stored = localStorage.getItem('kepegawaian_archive');
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored));
-      } catch (e) {
-        setItems(DEFAULT_DOCUMENTS);
+    const unsub = onSnapshot(collection(db, 'archives'), (snapshot) => {
+      if (snapshot.empty) {
+        // Seed initial documents to firestore if completely empty
+        DEFAULT_DOCUMENTS.forEach(async (docItem) => {
+          try {
+            await setDoc(doc(db, 'archives', docItem.id), {
+              nama: docItem.nama,
+              url: docItem.url,
+              createdAt: docItem.createdAt
+            });
+          } catch (e) {
+            console.error("Gagal menyemai data awal arsip:", docItem.id, e);
+          }
+        });
+      } else {
+        const fetched: ArchiveItem[] = [];
+        snapshot.forEach((d) => {
+          const data = d.data();
+          fetched.push({
+            id: d.id,
+            nama: data.nama || '',
+            url: data.url || '',
+            createdAt: data.createdAt || new Date().toISOString()
+          });
+        });
+        // Sort by dates descending
+        fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setItems(fetched);
       }
-    } else {
-      setItems(DEFAULT_DOCUMENTS);
-      localStorage.setItem('kepegawaian_archive', JSON.stringify(DEFAULT_DOCUMENTS));
-    }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'archives');
+    });
+
+    return () => unsub();
   }, []);
 
-  const saveToLocalStorage = (newItems: ArchiveItem[]) => {
-    setItems(newItems);
-    localStorage.setItem('kepegawaian_archive', JSON.stringify(newItems));
-  };
-
-  const handleAddSubmit = (e: React.FormEvent) => {
+  const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddError('');
 
@@ -96,24 +116,28 @@ export default function ArchiveTab() {
       urlToSave = 'https://' + urlToSave;
     }
 
-    const newItem: ArchiveItem = {
-      id: 'doc-' + Date.now(),
+    const docId = 'doc-' + Date.now();
+    const newItem = {
       nama: newNama.trim(),
       url: urlToSave,
       createdAt: new Date().toISOString()
     };
 
-    const updated = [newItem, ...items];
-    saveToLocalStorage(updated);
-    
-    // Reset & Close
-    setNewNama('');
-    setNewUrl('');
-    setNewPin('');
-    setIsAddOpen(false);
+    try {
+      await setDoc(doc(db, 'archives', docId), newItem);
+      
+      // Reset & Close
+      setNewNama('');
+      setNewUrl('');
+      setNewPin('');
+      setIsAddOpen(false);
+    } catch (error) {
+      setAddError('Gagal menyimpan ke database. Coba lagi.');
+      handleFirestoreError(error, OperationType.WRITE, 'archives/' + docId);
+    }
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
+  const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setEditError('');
 
@@ -134,22 +158,20 @@ export default function ArchiveTab() {
       urlToSave = 'https://' + urlToSave;
     }
 
-    const updated = items.map(item => {
-      if (item.id === editingItem.id) {
-        return {
-          ...item,
-          nama: editNama.trim(),
-          url: urlToSave
-        };
-      }
-      return item;
-    });
-
-    saveToLocalStorage(updated);
-    closeEditModal();
+    try {
+      await setDoc(doc(db, 'archives', editingItem.id), {
+        nama: editNama.trim(),
+        url: urlToSave,
+        createdAt: editingItem.createdAt
+      });
+      closeEditModal();
+    } catch (error) {
+      setEditError('Gagal memperbarui database.');
+      handleFirestoreError(error, OperationType.WRITE, 'archives/' + editingItem.id);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setEditError('');
     if (!editingItem) return;
 
@@ -158,9 +180,13 @@ export default function ArchiveTab() {
       return;
     }
 
-    const updated = items.filter(item => item.id !== editingItem.id);
-    saveToLocalStorage(updated);
-    closeEditModal();
+    try {
+      await deleteDoc(doc(db, 'archives', editingItem.id));
+      closeEditModal();
+    } catch (error) {
+      setEditError('Gagal menghapus dari database.');
+      handleFirestoreError(error, OperationType.DELETE, 'archives/' + editingItem.id);
+    }
   };
 
   const openEditModal = (item: ArchiveItem) => {
